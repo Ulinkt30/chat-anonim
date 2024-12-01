@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Anonymous</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Chat Anonymous</h1>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="input-area">
+            <textarea id="message-input" placeholder="Tulis pesan anonymous..."></textarea>
+            <button id="send-btn">Kirim Pesan</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+        import { getDatabase, ref, push, set, onChildAdded, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUC7y_fuLSYt7bAeGwZYBHCG5-gF0v2t0",
+            authDomain: "chat-anonymous-1e934.firebaseapp.com",
+            databaseURL: "https://chat-anonymous-1e934-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "chat-anonymous-1e934",
+            storageBucket: "chat-anonymous-1e934.firebasestorage.app",
+            messagingSenderId: "1045465534338",
+            appId: "1:1045465534338:web:0abc3477c96d9be338c99b",
+            measurementId: "G-ZBXPKX7BES"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase(app);
+
+        // DOM Elements
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatMessages = document.getElementById('chat-messages');
+
+        // Messages Reference
+        const messagesRef = ref(database, 'messages');
+
+        // Send Message Function
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            
+            if (messageText && messageText.length <= 500) {
+                const newMessageRef = push(messagesRef);
+                
+                set(newMessageRef, {
+                    text: messageText,
+                    timestamp: serverTimestamp()
+                });
+
+                messageInput.value = '';
+            } else {
+                alert('Pesan harus diisi dan maksimal 500 karakter!');
+            }
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Display Messages
+        onChildAdded(messagesRef, (snapshot) => {
+            const message = snapshot.val();
+            const messageElement = document.createElement('div');
+            
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `
+                <div class="message-text">${escapeHTML(message.text)}</div>
+                <div class="message-timestamp">
+                    ${formatTimestamp(message.timestamp)}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        // HTML Escape Function
+        function escapeHTML(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Timestamp Formatting Function
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleString('id-ID', {
+                hour: '2-digit', 
+                minute: '2-digit', 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric'
+            });
+        }
+    </script>
+</body>
+</html>
